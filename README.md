@@ -31,8 +31,8 @@ This project logs into the GST admission portal, checks the **Admission Test Res
 Edit `.env`:
 
 ```env
-GST_APPLICANT_ID=1514527
-GST_PASSWORD=WL4WJC
+GST_APPLICANT_ID=your_username
+GST_PASSWORD=your_password
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
 POLL_SECONDS=900
