@@ -168,7 +168,7 @@ def env_bool(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
-def load_config() -> Config:
+def load_config(require_portal_credentials: bool = True) -> Config:
     load_dotenv()
 
     applicant_id = os.getenv("GST_APPLICANT_ID", "").strip()
@@ -176,16 +176,19 @@ def load_config() -> Config:
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
     chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 
-    missing = [
-        name
-        for name, value in (
-            ("GST_APPLICANT_ID", applicant_id),
-            ("GST_PASSWORD", password),
-            ("TELEGRAM_BOT_TOKEN", bot_token),
-            ("TELEGRAM_CHAT_ID", chat_id),
-        )
-        if not value
+    required_values: list[tuple[str, str]] = [
+        ("TELEGRAM_BOT_TOKEN", bot_token),
+        ("TELEGRAM_CHAT_ID", chat_id),
     ]
+    if require_portal_credentials:
+        required_values.extend(
+            [
+                ("GST_APPLICANT_ID", applicant_id),
+                ("GST_PASSWORD", password),
+            ]
+        )
+
+    missing = [name for name, value in required_values if not value]
     if missing:
         raise ValueError("Missing required environment variables: " + ", ".join(missing))
 
@@ -255,6 +258,16 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="GST result to Telegram notifier")
     parser.add_argument("--once", action="store_true", help="Run a single check and exit")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+    parser.add_argument(
+        "--send-test-message",
+        action="store_true",
+        help="Send a test Telegram message and exit",
+    )
+    parser.add_argument(
+        "--test-message-text",
+        default="GST notifier test message: Telegram bot configuration is working.",
+        help="Custom message text for --send-test-message",
+    )
     return parser.parse_args()
 
 
@@ -266,7 +279,16 @@ def main() -> None:
         format="%(asctime)s | %(levelname)s | %(message)s",
     )
 
-    config = load_config()
+    config = load_config(require_portal_credentials=not args.send_test_message)
+
+    if args.send_test_message:
+        send_telegram_message(
+            config.telegram_bot_token,
+            config.telegram_chat_id,
+            args.test_message_text,
+        )
+        logging.info("Telegram test message sent successfully")
+        return
 
     while True:
         try:
