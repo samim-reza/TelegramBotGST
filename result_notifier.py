@@ -158,7 +158,21 @@ def send_telegram_message(bot_token: str, chat_id: str, message: str) -> None:
     }
 
     response = requests.post(url, data=payload, timeout=30)
-    response.raise_for_status()
+    telegram_desc = ""
+    telegram_ok = response.ok
+    try:
+        response_json = response.json()
+    except ValueError:
+        response_json = {}
+
+    if isinstance(response_json, dict):
+        telegram_ok = bool(response_json.get("ok", response.ok))
+        telegram_desc = str(response_json.get("description", "")).strip()
+
+    if not telegram_ok:
+        if telegram_desc:
+            raise RuntimeError(f"Telegram API error ({response.status_code}): {telegram_desc}")
+        response.raise_for_status()
 
 
 def env_bool(name: str, default: bool = False) -> bool:
