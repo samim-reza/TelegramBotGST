@@ -304,17 +304,21 @@ def main() -> None:
         logging.info("Telegram test message sent successfully")
         return
 
-    while True:
-        try:
-            status, changed, sent = perform_check(config)
-            logging.info("Checked status=%s changed=%s telegram_sent=%s", status, changed, sent)
-        except Exception as exc:  # pylint: disable=broad-except
-            logging.exception("Check failed: %s", exc)
+    try:
+        while True:
+            try:
+                status, changed, sent = perform_check(config)
+                logging.info("Checked status=%s changed=%s telegram_sent=%s", status, changed, sent)
+            except Exception as exc:  # pylint: disable=broad-except
+                logging.exception("Check failed: %s", exc)
 
-        if args.once:
-            return
+            if args.once:
+                return
 
-        time.sleep(config.poll_seconds)
+            time.sleep(config.poll_seconds)
+    except KeyboardInterrupt:
+        logging.info("Stopped by user")
+        return
 
 
 if __name__ == "__main__":
